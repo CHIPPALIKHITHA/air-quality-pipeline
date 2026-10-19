@@ -58,3 +58,15 @@ CREATE TABLE IF NOT EXISTS rejected_readings (
     reason      TEXT NOT NULL,
     loaded_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+
+-- Every alert we decided to send
+CREATE TABLE IF NOT EXISTS alerts_log (
+    id          BIGSERIAL PRIMARY KEY,
+    station_key INT NOT NULL REFERENCES dim_station(station_key),
+    parameter   TEXT NOT NULL,
+    value       NUMERIC NOT NULL,
+    category    TEXT NOT NULL,
+    sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    delivered   BOOLEAN NOT NULL DEFAULT false
+);
