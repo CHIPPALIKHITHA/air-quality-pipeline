@@ -70,6 +70,14 @@ def clean(df):
     rejected.append(r)
     df = df[~bad]
 
+    # Rule 2b: physically implausible values (most likely a sensor fault)
+    implausible = (((df["parameter"] == "pm25") & (df["value"] > 500)) |
+                   ((df["parameter"] == "pm10") & (df["value"] > 1000)))
+    r = df[implausible].copy()
+    r["reason"] = "implausible_value"
+    rejected.append(r)
+    df = df[~implausible]
+
     # Rule 3: one reading per station + pollutant -> newest, prefer ug/m3 on ties
     df = df.assign(not_ugm3=(df["units"] != "µg/m³").astype(int))
     df = df.sort_values(["station_id", "parameter", "measured_at", "not_ugm3"],
