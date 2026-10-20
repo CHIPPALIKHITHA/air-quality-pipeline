@@ -6,7 +6,7 @@ import pandas as pd
 
 from config import STATIONS
 
-RAW = Path("data/raw")
+RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
 
 
 def latest_run_folder():

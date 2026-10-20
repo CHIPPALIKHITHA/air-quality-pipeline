@@ -31,7 +31,8 @@ def fetch(path, retries=3):
 
 def save_raw(payload, kind, station_id, run_ts):
     """Keep the untouched API response so we can re-process it later."""
-    folder = Path("data/raw") / f"{run_ts:%Y-%m-%d}" / f"{run_ts:%H%M}"
+    folder = (Path(__file__).resolve().parent.parent / "data" / "raw"
+              / f"{run_ts:%Y-%m-%d}" / f"{run_ts:%H%M}")
     folder.mkdir(parents=True, exist_ok=True)
     (folder / f"{station_id}_{kind}.json").write_text(json.dumps(payload))
 

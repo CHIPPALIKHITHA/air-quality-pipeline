@@ -13,7 +13,8 @@ load_dotenv()
 def connect():
     # Postgres runs in Docker; port 5433 on this computer maps to it
     return psycopg2.connect(
-        host="localhost", port=5433,
+        host=os.getenv("WAREHOUSE_HOST", "localhost"),
+        port=int(os.getenv("WAREHOUSE_PORT", "5433")),
         user=os.getenv("WAREHOUSE_USER"),
         password=os.getenv("WAREHOUSE_PASSWORD"),
         dbname=os.getenv("WAREHOUSE_DB"),
