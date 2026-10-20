@@ -11,5 +11,24 @@ services:
     volumes:
       - warehouse_data:/var/lib/postgresql/data
 
+  airflow:
+    build: ./airflow
+    container_name: aq_airflow
+    command: standalone
+    env_file: .env
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      PYTHONPATH: /opt/airflow/src
+      WAREHOUSE_HOST: warehouse
+      WAREHOUSE_PORT: "5432"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+    depends_on:
+      - warehouse
+
 volumes:
   warehouse_data:
