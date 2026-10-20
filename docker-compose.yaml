@@ -2,6 +2,7 @@ services:
   warehouse:
     image: postgres:16
     container_name: aq_warehouse
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${WAREHOUSE_USER}
       POSTGRES_PASSWORD: ${WAREHOUSE_PASSWORD}
@@ -14,10 +15,12 @@ services:
   airflow:
     build: ./airflow
     container_name: aq_airflow
+    restart: unless-stopped
     command: standalone
     env_file: .env
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/state/airflow.db
       PYTHONPATH: /opt/airflow/src
       WAREHOUSE_HOST: warehouse
       WAREHOUSE_PORT: "5432"
@@ -27,8 +30,10 @@ services:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
       - ./data:/opt/airflow/data
+      - airflow_state:/opt/airflow/state
     depends_on:
       - warehouse
 
 volumes:
   warehouse_data:
+  airflow_state:
