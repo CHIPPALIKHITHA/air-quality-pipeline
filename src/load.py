@@ -1,12 +1,13 @@
 import os
 
+import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extras import execute_values
 
 from config import STATIONS
+from spike import SPIKE_MIN, SPIKE_WINDOW_HOURS, is_spike
 from transform import latest_run_folder, flatten_run, clean
-
 load_dotenv()
 
 
@@ -20,6 +21,31 @@ def connect():
         dbname=os.getenv("WAREHOUSE_DB"),
     )
 
+def drop_spikes(cur, good, rejected):
+    """Move PM2.5 spikes from good to rejected (reason 'spike'), comparing with what is already stored."""
+    spike_idx = []
+    for r in good.itertuples():
+        if r.parameter != "pm25" or float(r.value) < SPIKE_MIN:
+            continue
+        ts = r.measured_at.to_pydatetime()
+        cur.execute("""
+            SELECT f.value FROM fact_air_quality f
+            JOIN dim_station s   ON s.station_key = f.station_key
+            JOIN dim_parameter p ON p.parameter_key = f.parameter_key
+            WHERE s.station_id = %s AND p.parameter = %s
+              AND f.measured_at < %s
+              AND f.measured_at >= %s - %s * interval '1 hour'
+            ORDER BY f.measured_at DESC LIMIT 1""",
+            (int(r.station_id), r.parameter, ts, ts, SPIKE_WINDOW_HOURS))
+        row = cur.fetchone()
+        previous = float(row[0]) if row else None
+        if is_spike(float(r.value), previous):
+            spike_idx.append(r.Index)
+    if not spike_idx:
+        return good, rejected
+    spikes = good.loc[spike_idx].assign(reason="spike")
+    return good.drop(index=spike_idx), pd.concat([rejected, spikes], ignore_index=True)
+
 
 def load(good, rejected):
     conn = connect()
@@ -27,6 +53,7 @@ def load(good, rejected):
         # Makes re-runs safe for rejected rows too
         cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_rejected "
                     "ON rejected_readings (sensor_id, measured_at, reason)")
+        good, rejected = drop_spikes(cur, good, rejected)
 
         # 1. Dimensions
         execute_values(cur, """
