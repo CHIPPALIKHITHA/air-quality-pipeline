@@ -1,0 +1,8 @@
+city,station,kind,pm25,measured_at,lag_hours,category
+Delhi,New Delhi,live,130.0,2026-10-21 16:30:00+00,0.35,Very Poor
+Delhi,Talkatora Garden - DPCC,full,54.25,2026-10-18 08:30:00+00,47.78,Satisfactory
+Mumbai,Mumbai,live,68.0,2026-10-21 14:30:00+00,2.00,Moderate
+Mumbai,Byculla - BMC,full,58.95,2026-10-18 08:30:00+00,47.78,Satisfactory
+Chennai,Velachery - CPCB,full,13.68,2026-10-18 08:30:00+00,47.78,Good
+Kolkata,Jadavpur - WBPCB,full,64.17,2026-10-18 08:30:00+00,47.78,Moderate
+Hyderabad,Central University - TSPCB,full,16.0,2026-10-18 08:15:00+00,48.03,Good

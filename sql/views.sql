@@ -1,5 +1,4 @@
--- Latest PM2.5 reading per station, with CPCB category.
--- Categories use hourly values against limits defined for 24-hour averages.
+-- 1. Latest PM2.5 reading per station, with CPCB category
 CREATE OR REPLACE VIEW v_latest_by_station AS
 SELECT DISTINCT ON (s.station_key)
     s.city,
@@ -22,32 +21,32 @@ JOIN dim_parameter p ON p.parameter_key = f.parameter_key
 WHERE p.parameter = 'pm25'
 ORDER BY s.station_key, f.measured_at DESC;
 
--- Daily PM2.5 per city
+-- 2. Daily PM2.5 per city (uses the reading's own date, so it works even if date_key is not filled)
 CREATE OR REPLACE VIEW v_daily_city_pm25 AS
-SELECT s.city, d.full_date,
+SELECT s.city,
+       (f.measured_at AT TIME ZONE 'Asia/Kolkata')::date AS full_date,
        ROUND(AVG(f.value)::numeric, 1) AS avg_pm25,
        MAX(f.value) AS max_pm25,
        COUNT(*) AS readings
 FROM fact_air_quality f
-JOIN dim_station s   ON s.station_key = f.station_key
+JOIN dim_station   s ON s.station_key   = f.station_key
 JOIN dim_parameter p ON p.parameter_key = f.parameter_key
-JOIN dim_date d      ON d.date_key = f.date_key
 WHERE p.parameter = 'pm25'
-GROUP BY s.city, d.full_date;
+GROUP BY s.city, full_date;
 
--- Average PM2.5 by hour of day (IST)
+-- 3. Average PM2.5 by hour of day (IST)
 CREATE OR REPLACE VIEW v_hourly_pattern AS
 SELECT s.city,
        EXTRACT(HOUR FROM f.measured_at AT TIME ZONE 'Asia/Kolkata')::int AS hour_ist,
        ROUND(AVG(f.value)::numeric, 1) AS avg_pm25,
        COUNT(*) AS readings
 FROM fact_air_quality f
-JOIN dim_station s   ON s.station_key = f.station_key
+JOIN dim_station   s ON s.station_key   = f.station_key
 JOIN dim_parameter p ON p.parameter_key = f.parameter_key
 WHERE p.parameter = 'pm25'
 GROUP BY s.city, hour_ist;
 
--- Loaded versus rejected, by reason
+-- 4. Loaded versus rejected, by reason
 CREATE OR REPLACE VIEW v_data_quality AS
 SELECT 'loaded' AS status, 'accepted' AS reason, COUNT(*) AS rows FROM fact_air_quality
 UNION ALL
